@@ -839,3 +839,47 @@ window.scrollToProduct = scrollToProduct;
 window.sendMessage = sendMessage;
 
 console.log('Script loaded successfully');
+
+// DOM Ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth Animasi Scroll dengan Intersection Observer
+    const animatedElements = document.querySelectorAll('.product-card, .about-section');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target); // Stop setelah animasi
+            }
+        });
+    }, {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+    });
+
+    animatedElements.forEach(el => observer.observe(el));
+
+    // Navbar Mobile Toggle
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+
+    hamburger.addEventListener('click', () => {
+        navMenu.classList.toggle('active'); // Tambah CSS untuk .active { display: flex; flex-direction: column; }
+    });
+
+    // Tambah ke Keranjang (Sederhana - Alert, expand ke localStorage nanti)
+    const buyButtons = document.querySelectorAll('.btn-buy');
+    buyButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const productName = e.target.parentElement.querySelector('h3').textContent;
+            alert(`${productName} ditambahkan ke keranjang!`); // Ganti dengan cart logic real
+        });
+    });
+
+    // Close mobile menu on link click
+    document.querySelectorAll('.nav-menu a').forEach(link => {
+        link.addEventListener('click', () => {
+            navMenu.classList.remove('active');
+        });
+    });
+});
