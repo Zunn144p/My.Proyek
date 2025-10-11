@@ -1,4 +1,4 @@
-// ===== PRODUCT DATA & GLOBAL VARIABLES =====
+// Product Data - Computer & Networking
 let products = [
     {
         id: 1,
@@ -62,20 +62,26 @@ let products = [
     }
 ];
 
+// Global variables
 let cart = [];
 let cartCount = 0;
 let totalAmount = 0;
 let currentUser = null;
 let isDeveloper = false;
 
-// ===== INITIALIZATION FUNCTIONS =====
+// DOM Content Loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Loaded - Initializing App');
+    initializeApp();
+});
+
 function initializeApp() {
-    console.log('🚀 Initializing TechSphere App...');
+    console.log('Initializing application...');
     
     // Load products first
     loadProducts();
     
-    // Initialize components
+    // Initialize other components
     initNavigation();
     initCart();
     initCategoryFilters();
@@ -86,16 +92,18 @@ function initializeApp() {
     // Update UI
     updateUserStatus();
     
-    console.log('✅ Application initialized successfully');
+    console.log('Application initialized successfully');
+    console.log('Products loaded:', products.length);
 }
 
+// PERBAIKAN: Navigation yang benar
 function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');
     const hamburger = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
 
     // Hamburger menu
-    hamburger?.addEventListener('click', function() {
+    hamburger.addEventListener('click', function() {
         navMenu.classList.toggle('active');
         hamburger.classList.toggle('active');
     });
@@ -105,55 +113,76 @@ function initNavigation() {
         link.addEventListener('click', function(e) {
             if (this.getAttribute('href').startsWith('#')) {
                 e.preventDefault();
-                const targetId = this.getAttribute('href').substring(1);
-                smoothScrollToSection(targetId);
                 
+                const targetId = this.getAttribute('href').substring(1);
+                scrollToSection(targetId);
+                
+                // Update active states
                 navLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 
+                // Close mobile menu
                 navMenu.classList.remove('active');
                 hamburger.classList.remove('active');
             }
         });
     });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-container')) {
+            navMenu.classList.remove('active');
+            hamburger.classList.remove('active');
+        }
+    });
 }
 
-function initModals() {
-    const modals = document.querySelectorAll('.modal');
-    const closeButtons = document.querySelectorAll('.close-modal');
+// PERBAIKAN: Scroll to section yang benar
+function scrollToSection(sectionId) {
+    console.log('Scrolling to section:', sectionId);
     
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            this.closest('.modal').style.display = 'none';
-        });
-    });
+    // Hide developer dashboard if visible
+    if (isDeveloper && sectionId !== 'developer-dashboard') {
+        showMainInterface();
+    }
     
-    modals.forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-            }
+    const section = document.getElementById(sectionId);
+    if (section) {
+        // Remove active class from all sections
+        document.querySelectorAll('.section').forEach(s => {
+            s.classList.remove('active');
         });
-    });
-    
-    // Add product form
-    const addProductForm = document.getElementById('add-product-form');
-    if (addProductForm) {
-        addProductForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleAddProduct();
+        
+        // Add active class to target section
+        section.classList.add('active');
+        
+        // Smooth scroll
+        window.scrollTo({
+            top: section.offsetTop - 80,
+            behavior: 'smooth'
         });
+        
+        console.log('Successfully scrolled to:', sectionId);
+    } else {
+        console.error('Section not found:', sectionId);
     }
 }
 
-// ===== PRODUCT MANAGEMENT =====
+// PERBAIKAN: Load products yang benar
 function loadProducts(filterCategory = 'all') {
+    console.log('Loading products, category:', filterCategory);
+    
     const productsGrid = document.querySelector('.products-grid');
-    if (!productsGrid) return;
+    if (!productsGrid) {
+        console.error('Products grid not found!');
+        return;
+    }
 
     const filteredProducts = filterCategory === 'all' 
         ? products 
         : products.filter(product => product.category === filterCategory);
+
+    console.log('Filtered products:', filteredProducts.length);
 
     if (filteredProducts.length === 0) {
         productsGrid.innerHTML = `
@@ -180,30 +209,310 @@ function loadProducts(filterCategory = 'all') {
             </button>
         </div>
     `).join('');
+
+    console.log('Products rendered successfully');
 }
 
-function getCategoryName(category) {
-    const categories = {
-        'hardware': 'Hardware',
-        'networking': 'Networking',
-        'accessories': 'Accessories'
-    };
-    return categories[category] || category;
+// Login Functions
+function showLoginModal() {
+    document.getElementById('login-modal').style.display = 'block';
 }
 
-function initCategoryFilters() {
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    categoryBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            categoryBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const category = this.getAttribute('data-category');
-            loadProducts(category);
+function showDeveloperLogin() {
+    document.getElementById('developer-login-form').classList.remove('hidden');
+}
+
+function loginAsUser() {
+    currentUser = { type: 'user', name: 'User' };
+    updateUserStatus();
+    showNotification('Berhasil login sebagai User!', 'success');
+    document.getElementById('login-modal').style.display = 'none';
+}
+
+function loginAsDeveloper() {
+    const password = document.getElementById('dev-password').value;
+    if (password === 'admin123') {
+        currentUser = { type: 'developer', name: 'Developer' };
+        isDeveloper = true;
+        updateUserStatus();
+        showDeveloperDashboard();
+        showNotification('Akses Developer berhasil!', 'success');
+        document.getElementById('login-modal').style.display = 'none';
+    } else {
+        showNotification('Password salah!', 'error');
+    }
+}
+
+// PERBAIKAN: Show Developer Dashboard
+function showDeveloperDashboard() {
+    console.log('Showing developer dashboard');
+    
+    // Hide main content
+    document.getElementById('main-content').classList.add('hidden');
+    document.querySelector('footer').classList.add('hidden');
+    
+    // Show developer dashboard
+    document.getElementById('developer-dashboard').classList.remove('hidden');
+    
+    // Load developer data
+    loadDevProducts();
+    loadLowStockAlerts();
+    updateAnalytics();
+    
+    console.log('Developer dashboard shown');
+}
+
+// PERBAIKAN: Kembali ke main interface
+function logout() {
+    currentUser = null;
+    isDeveloper = false;
+    updateUserStatus();
+    showMainInterface();
+    showNotification('Berhasil logout!', 'success');
+}
+
+function showMainInterface() {
+    console.log('Showing main interface');
+    
+    // Hide developer dashboard
+    document.getElementById('developer-dashboard').classList.add('hidden');
+    
+    // Show main content and footer
+    document.getElementById('main-content').classList.remove('hidden');
+    document.querySelector('footer').classList.remove('hidden');
+    
+    // Reset to home section
+    scrollToSection('home');
+    
+    console.log('Main interface shown');
+}
+
+function updateUserStatus() {
+    const userMenu = document.querySelector('.user-menu span');
+    if (currentUser) {
+        userMenu.textContent = currentUser.name;
+        userMenu.style.color = '#4fc3f7';
+    } else {
+        userMenu.textContent = 'Guest';
+        userMenu.style.color = '#e0f7fa';
+    }
+}
+
+// Developer Functions
+function showDevSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.dev-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Remove active class from all menu items
+    document.querySelectorAll('.dev-menu-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Show selected section
+    document.getElementById(`dev-${sectionName}`).classList.add('active');
+    
+    // Activate menu item
+    document.querySelector(`[href="#dev-${sectionName}"]`).classList.add('active');
+}
+
+function loadDevProducts() {
+    const devProductsGrid = document.querySelector('.dev-products-grid');
+    if (!devProductsGrid) {
+        console.error('Dev products grid not found');
+        return;
+    }
+    
+    console.log('Loading dev products:', products.length);
+    
+    devProductsGrid.innerHTML = products.map(product => `
+        <div class="dev-product-card" data-product-id="${product.id}">
+            <div class="dev-product-header">
+                <div class="dev-product-info">
+                    <h4>${product.name}</h4>
+                    <div class="dev-product-category">${getCategoryName(product.category)}</div>
+                </div>
+                <div class="dev-product-actions">
+                    <button class="dev-action-btn" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="dev-product-details">
+                <div class="dev-product-emoji">${product.image}</div>
+                <div class="dev-product-stats">
+                    <div class="dev-product-price">
+                        <span>Price:</span>
+                        <strong>Rp ${product.price.toLocaleString('id-ID')}</strong>
+                    </div>
+                    <div class="dev-product-stock">
+                        <span>Stock:</span>
+                        <strong>${product.stock} units</strong>
+                    </div>
+                    <div class="dev-product-sales">
+                        <span>Sales:</span>
+                        <strong>${product.sales || 0} sold</strong>
+                    </div>
+                </div>
+            </div>
+            <p class="dev-product-description">${product.description}</p>
+            <div class="dev-product-controls">
+                <div class="control-group">
+                    <label>Update Price</label>
+                    <input type="number" class="control-input price-input" value="${product.price}" 
+                           onchange="updateProductPrice(${product.id}, this.value)">
+                </div>
+                <div class="control-group">
+                    <label>Update Stock</label>
+                    <input type="number" class="control-input stock-input" value="${product.stock}" 
+                           onchange="updateProductStock(${product.id}, this.value)">
+                </div>
+                <button class="update-btn" onclick="saveProductChanges(${product.id})">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button class="delete-btn" onclick="deleteProduct(${product.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function loadLowStockAlerts() {
+    const alertList = document.querySelector('.alert-list');
+    if (!alertList) return;
+    
+    const lowStockProducts = products.filter(product => product.stock < 10);
+    
+    if (lowStockProducts.length === 0) {
+        alertList.innerHTML = '<p class="no-alerts">No low stock alerts</p>';
+        return;
+    }
+    
+    alertList.innerHTML = lowStockProducts.map(product => `
+        <div class="alert-item ${product.stock < 5 ? 'critical' : ''}">
+            <div class="alert-info">
+                <strong>${product.name}</strong>
+                <span>${getCategoryName(product.category)}</span>
+            </div>
+            <div class="alert-stock">
+                <span class="stock-count">${product.stock} units left</span>
+                <button class="dev-action-btn" onclick="focusProduct(${product.id})">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateAnalytics() {
+    document.getElementById('total-products').textContent = products.length;
+    document.getElementById('total-sales').textContent = products.reduce((total, product) => total + (product.sales || 0), 0);
+    document.getElementById('low-stock-count').textContent = products.filter(p => p.stock < 10).length;
+}
+
+// Product Management Functions
+function updateProductPrice(productId, newPrice) {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        product.newPrice = parseInt(newPrice);
+    }
+}
+
+function updateProductStock(productId, newStock) {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        product.newStock = parseInt(newStock);
+    }
+}
+
+function saveProductChanges(productId) {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        if (product.newPrice !== undefined) {
+            product.price = product.newPrice;
+            delete product.newPrice;
+        }
+        if (product.newStock !== undefined) {
+            product.stock = product.newStock;
+            delete product.newStock;
+        }
+        
+        showNotification('Produk berhasil diperbarui!', 'success');
+        loadDevProducts();
+        loadProducts(); // Update main products view
+        loadLowStockAlerts();
+        updateAnalytics();
+        updateRecommendedProducts();
+    }
+}
+
+function deleteProduct(productId) {
+    if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+        products = products.filter(p => p.id !== productId);
+        showNotification('Produk berhasil dihapus!', 'success');
+        loadDevProducts();
+        loadProducts();
+        updateAnalytics();
+        updateRecommendedProducts();
+    }
+}
+
+// Modal Functions
+function initModals() {
+    const modals = document.querySelectorAll('.modal');
+    const closeButtons = document.querySelectorAll('.close-modal');
+    
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.modal').style.display = 'none';
         });
+    });
+    
+    modals.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    });
+    
+    // Add product form
+    document.getElementById('add-product-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const newProduct = {
+            id: Math.max(...products.map(p => p.id), 0) + 1,
+            name: document.getElementById('product-name').value,
+            category: document.getElementById('product-category').value,
+            price: parseInt(document.getElementById('product-price').value),
+            stock: parseInt(document.getElementById('product-stock').value),
+            description: document.getElementById('product-description').value,
+            image: document.getElementById('product-emoji').value,
+            sales: 0
+        };
+        
+        products.push(newProduct);
+        showNotification('Produk berhasil ditambahkan!', 'success');
+        closeAddProductModal();
+        loadDevProducts();
+        loadProducts();
+        updateAnalytics();
+        updateRecommendedProducts();
     });
 }
 
-// ===== CART MANAGEMENT =====
+function showAddProductModal() {
+    document.getElementById('add-product-modal').style.display = 'block';
+}
+
+function closeAddProductModal() {
+    document.getElementById('add-product-modal').style.display = 'none';
+    document.getElementById('add-product-form').reset();
+}
+
+// Cart Functions (tetap sama)
 function initCart() {
     updateCartDisplay();
     const savedCart = localStorage.getItem('techsphere-cart');
@@ -272,39 +581,35 @@ function updateCartDisplay() {
     const cartItemsElement = document.querySelector('.cart-items');
     const totalAmountElement = document.querySelector('.total-amount');
     
-    if (cartCountElement) cartCountElement.textContent = cartCount;
+    cartCountElement.textContent = cartCount;
     
-    if (cartItemsElement) {
-        if (cart.length === 0) {
-            cartItemsElement.innerHTML = `
-                <div class="cart-empty">
-                    <i class="fas fa-shopping-cart"></i>
-                    <p>Keranjang kosong</p>
+    if (cart.length === 0) {
+        cartItemsElement.innerHTML = `
+            <div class="cart-empty">
+                <i class="fas fa-shopping-cart"></i>
+                <p>Keranjang kosong</p>
+            </div>
+        `;
+    } else {
+        cartItemsElement.innerHTML = cart.map(item => `
+            <div class="cart-item">
+                <div class="cart-item-info">
+                    <h4>${item.name}</h4>
+                    <p>Rp ${item.price.toLocaleString('id-ID')}</p>
                 </div>
-            `;
-        } else {
-            cartItemsElement.innerHTML = cart.map(item => `
-                <div class="cart-item">
-                    <div class="cart-item-info">
-                        <h4>${item.name}</h4>
-                        <p>Rp ${item.price.toLocaleString('id-ID')}</p>
-                    </div>
-                    <div class="cart-item-actions">
-                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
-                        <span>${item.quantity}</span>
-                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
-                        <button class="remove-btn" onclick="removeFromCart(${item.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                <div class="cart-item-actions">
+                    <button class="quantity-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                    <span>${item.quantity}</span>
+                    <button class="quantity-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                    <button class="remove-btn" onclick="removeFromCart(${item.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-            `).join('');
-        }
+            </div>
+        `).join('');
     }
     
-    if (totalAmountElement) {
-        totalAmountElement.textContent = totalAmount.toLocaleString('id-ID');
-    }
+    totalAmountElement.textContent = totalAmount.toLocaleString('id-ID');
 }
 
 function checkout() {
@@ -326,291 +631,49 @@ function checkout() {
     updateCart();
     localStorage.removeItem('techsphere-cart');
     loadProducts();
-    updateRecommendedProducts();
-}
-
-// ===== LOGIN & USER MANAGEMENT =====
-function showLoginModal() {
-    const modal = document.getElementById('login-modal');
-    if (modal) modal.style.display = 'block';
-}
-
-function showDeveloperLogin() {
-    const devForm = document.getElementById('developer-login-form');
-    if (devForm) devForm.classList.remove('hidden');
-}
-
-function loginAsUser() {
-    currentUser = { type: 'user', name: 'User' };
-    updateUserStatus();
-    showNotification('Berhasil login sebagai User!', 'success');
-    closeModal('login-modal');
-}
-
-function loginAsDeveloper() {
-    const passwordInput = document.getElementById('dev-password');
-    if (!passwordInput) return;
-    
-    const password = passwordInput.value;
-    if (password === 'admin123') {
-        currentUser = { type: 'developer', name: 'Developer' };
-        isDeveloper = true;
-        updateUserStatus();
-        showDeveloperDashboard();
-        showNotification('Akses Developer berhasil!', 'success');
-        closeModal('login-modal');
-    } else {
-        showNotification('Password salah!', 'error');
-    }
-}
-
-function logout() {
-    currentUser = null;
-    isDeveloper = false;
-    updateUserStatus();
-    showMainInterface();
-    showNotification('Berhasil logout!', 'success');
-}
-
-function updateUserStatus() {
-    const userMenu = document.querySelector('.user-menu span');
-    if (userMenu) {
-        if (currentUser) {
-            userMenu.textContent = currentUser.name;
-            userMenu.style.color = '#4fc3f7';
-        } else {
-            userMenu.textContent = 'Guest';
-            userMenu.style.color = '#e0f7fa';
-        }
-    }
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.style.display = 'none';
-}
-
-// ===== DEVELOPER DASHBOARD =====
-function showDeveloperDashboard() {
-    document.getElementById('main-content').classList.add('hidden');
-    document.querySelector('footer').classList.add('hidden');
-    document.getElementById('developer-dashboard').classList.remove('hidden');
-    
-    loadDevProducts();
-    loadLowStockAlerts();
-    updateAnalytics();
-}
-
-function showMainInterface() {
-    document.getElementById('developer-dashboard').classList.add('hidden');
-    document.getElementById('main-content').classList.remove('hidden');
-    document.querySelector('footer').classList.remove('hidden');
-    smoothScrollToSection('home');
-}
-
-function showDevSection(sectionName) {
-    document.querySelectorAll('.dev-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    document.querySelectorAll('.dev-menu-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    document.getElementById(`dev-${sectionName}`).classList.add('active');
-    document.querySelector(`[href="#dev-${sectionName}"]`).classList.add('active');
-}
-
-function loadDevProducts() {
-    const devProductsGrid = document.querySelector('.dev-products-grid');
-    if (!devProductsGrid) return;
-    
-    devProductsGrid.innerHTML = products.map(product => `
-        <div class="dev-product-card" data-product-id="${product.id}">
-            <div class="dev-product-header">
-                <div class="dev-product-info">
-                    <h4>${product.name}</h4>
-                    <div class="dev-product-category">${getCategoryName(product.category)}</div>
-                </div>
-            </div>
-            <div class="dev-product-details">
-                <div class="dev-product-emoji">${product.image}</div>
-                <div class="dev-product-stats">
-                    <div class="dev-product-price">
-                        <span>Price:</span>
-                        <strong>Rp ${product.price.toLocaleString('id-ID')}</strong>
-                    </div>
-                    <div class="dev-product-stock">
-                        <span>Stock:</span>
-                        <strong>${product.stock} units</strong>
-                    </div>
-                </div>
-            </div>
-            <p class="dev-product-description">${product.description}</p>
-            <div class="dev-product-controls">
-                <div class="control-group">
-                    <label>Update Price</label>
-                    <input type="number" class="control-input price-input" value="${product.price}" 
-                           onchange="updateProductPrice(${product.id}, this.value)">
-                </div>
-                <div class="control-group">
-                    <label>Update Stock</label>
-                    <input type="number" class="control-input stock-input" value="${product.stock}" 
-                           onchange="updateProductStock(${product.id}, this.value)">
-                </div>
-                <button class="update-btn" onclick="saveProductChanges(${product.id})">
-                    <i class="fas fa-save"></i> Save
-                </button>
-                <button class="delete-btn" onclick="deleteProduct(${product.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function updateProductPrice(productId, newPrice) {
-    const product = products.find(p => p.id === productId);
-    if (product) product.newPrice = parseInt(newPrice);
-}
-
-function updateProductStock(productId, newStock) {
-    const product = products.find(p => p.id === productId);
-    if (product) product.newStock = parseInt(newStock);
-}
-
-function saveProductChanges(productId) {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-        if (product.newPrice !== undefined) {
-            product.price = product.newPrice;
-            delete product.newPrice;
-        }
-        if (product.newStock !== undefined) {
-            product.stock = product.newStock;
-            delete product.newStock;
-        }
-        
-        showNotification('Produk berhasil diperbarui!', 'success');
+    if (isDeveloper) {
         loadDevProducts();
-        loadProducts();
         loadLowStockAlerts();
         updateAnalytics();
-        updateRecommendedProducts();
     }
-}
-
-function deleteProduct(productId) {
-    if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-        products = products.filter(p => p.id !== productId);
-        showNotification('Produk berhasil dihapus!', 'success');
-        loadDevProducts();
-        loadProducts();
-        updateAnalytics();
-        updateRecommendedProducts();
-    }
-}
-
-function loadLowStockAlerts() {
-    const alertList = document.querySelector('.alert-list');
-    if (!alertList) return;
-    
-    const lowStockProducts = products.filter(product => product.stock < 10);
-    
-    if (lowStockProducts.length === 0) {
-        alertList.innerHTML = '<p class="no-alerts">No low stock alerts</p>';
-        return;
-    }
-    
-    alertList.innerHTML = lowStockProducts.map(product => `
-        <div class="alert-item ${product.stock < 5 ? 'critical' : ''}">
-            <div class="alert-info">
-                <strong>${product.name}</strong>
-                <span>${getCategoryName(product.category)}</span>
-            </div>
-            <div class="alert-stock">
-                <span class="stock-count">${product.stock} units left</span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function updateAnalytics() {
-    const totalProducts = document.getElementById('total-products');
-    const totalSales = document.getElementById('total-sales');
-    const lowStockCount = document.getElementById('low-stock-count');
-    
-    if (totalProducts) totalProducts.textContent = products.length;
-    if (totalSales) totalSales.textContent = products.reduce((total, product) => total + (product.sales || 0), 0);
-    if (lowStockCount) lowStockCount.textContent = products.filter(p => p.stock < 10).length;
-}
-
-// ===== PRODUCT MODAL =====
-function showAddProductModal() {
-    const modal = document.getElementById('add-product-modal');
-    if (modal) modal.style.display = 'block';
-}
-
-function closeAddProductModal() {
-    const modal = document.getElementById('add-product-modal');
-    const form = document.getElementById('add-product-form');
-    if (modal) modal.style.display = 'none';
-    if (form) form.reset();
-}
-
-function handleAddProduct() {
-    const name = document.getElementById('product-name').value;
-    const category = document.getElementById('product-category').value;
-    const price = parseInt(document.getElementById('product-price').value);
-    const stock = parseInt(document.getElementById('product-stock').value);
-    const description = document.getElementById('product-description').value;
-    const emoji = document.getElementById('product-emoji').value;
-
-    const newProduct = {
-        id: Math.max(...products.map(p => p.id), 0) + 1,
-        name,
-        category,
-        price,
-        stock,
-        description,
-        image: emoji,
-        sales: 0
-    };
-    
-    products.push(newProduct);
-    showNotification('Produk berhasil ditambahkan!', 'success');
-    closeAddProductModal();
-    loadDevProducts();
-    loadProducts();
-    updateAnalytics();
     updateRecommendedProducts();
 }
 
-// ===== CHATBOT =====
+// Category Filters
+function initCategoryFilters() {
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const category = this.getAttribute('data-category');
+            loadProducts(category);
+        });
+    });
+}
+
+// Chatbot Functions
 function initChatbot() {
     const toggleBtn = document.querySelector('.chatbot-toggle');
     const closeBtn = document.querySelector('.close-chatbot');
     const sendBtn = document.querySelector('.send-btn');
     const chatInput = document.querySelector('.chat-input');
     
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', function() {
-            document.querySelector('.chatbot-container').classList.toggle('active');
-            updateRecommendedProducts();
-        });
-    }
+    toggleBtn.addEventListener('click', function() {
+        document.querySelector('.chatbot-container').classList.toggle('active');
+        updateRecommendedProducts();
+    });
     
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            document.querySelector('.chatbot-container').classList.remove('active');
-        });
-    }
+    closeBtn.addEventListener('click', function() {
+        document.querySelector('.chatbot-container').classList.remove('active');
+    });
     
-    if (sendBtn && chatInput) {
-        sendBtn.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendMessage();
-        });
-    }
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
     
     updateRecommendedProducts();
 }
@@ -635,22 +698,30 @@ function updateRecommendedProducts() {
 }
 
 function scrollToProduct(category, productId) {
-    smoothScrollToSection('products');
+    scrollToSection('products');
     
     document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-category="${category}"]`).classList.add('active');
     
     loadProducts(category);
+    
     document.querySelector('.chatbot-container').classList.remove('active');
+    
+    setTimeout(() => {
+        const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+        if (productCard) {
+            productCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 1000);
 }
 
 function sendMessage() {
     const chatInput = document.querySelector('.chat-input');
-    const message = chatInput?.value.trim();
+    const message = chatInput.value.trim();
     
     if (message) {
         addMessage(message, 'user');
-        if (chatInput) chatInput.value = '';
+        chatInput.value = '';
         
         setTimeout(() => {
             let response = "Maaf, saya tidak mengerti pertanyaan Anda. ";
@@ -675,8 +746,6 @@ function sendMessage() {
 
 function addMessage(text, sender) {
     const messagesContainer = document.querySelector('.chatbot-messages');
-    if (!messagesContainer) return;
-    
     const messageDiv = document.createElement('div');
     messageDiv.className = `${sender}-message`;
     
@@ -690,34 +759,17 @@ function addMessage(text, sender) {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// ===== UTILITY FUNCTIONS =====
-function smoothScrollToSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (section) {
-        const offsetTop = section.offsetTop - 80;
-        
-        window.scrollTo({
-            top: offsetTop,
-            behavior: 'smooth'
-        });
-
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${sectionId}`) {
-                link.classList.add('active');
-            }
-        });
-
-        section.classList.add('active');
-    }
+// Utility Functions
+function getCategoryName(category) {
+    const categories = {
+        'hardware': 'Hardware',
+        'networking': 'Networking',
+        'accessories': 'Accessories'
+    };
+    return categories[category] || category;
 }
 
 function showNotification(message, type = 'success') {
-    // Remove existing notifications
-    document.querySelectorAll('.notification').forEach(notification => {
-        notification.remove();
-    });
-    
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
@@ -764,16 +816,12 @@ function initContactForm() {
     }
 }
 
-// ===== EVENT LISTENERS =====
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('checkout-btn')) {
-        checkout();
-    }
-});
-
-// ===== EXPORT ALL FUNCTIONS TO GLOBAL SCOPE =====
-window.initializeApp = initializeApp;
-window.smoothScrollToSection = smoothScrollToSection;
+// Export functions for global use
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.updateQuantity = updateQuantity;
+window.scrollToSection = scrollToSection;
+window.checkout = checkout;
 window.showLoginModal = showLoginModal;
 window.loginAsUser = loginAsUser;
 window.showDeveloperLogin = showDeveloperLogin;
@@ -786,18 +834,8 @@ window.updateProductPrice = updateProductPrice;
 window.updateProductStock = updateProductStock;
 window.saveProductChanges = saveProductChanges;
 window.deleteProduct = deleteProduct;
+window.focusProduct = focusProduct;
 window.scrollToProduct = scrollToProduct;
 window.sendMessage = sendMessage;
 
-// Cart functions
-window.addToCart = addToCart;
-window.removeFromCart = removeFromCart;
-window.updateQuantity = updateQuantity;
-window.checkout = checkout;
-
-// Initialize app when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-});
-
-console.log('✅ TechSphere JavaScript loaded successfully!');
+console.log('Script loaded successfully');
